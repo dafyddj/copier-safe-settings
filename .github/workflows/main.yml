@@ -1,0 +1,87 @@
+name: Test & release
+
+on:
+  pull_request:
+  push:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != format('refs/heads/{0}', github.event.repository.default_branch) }}
+
+jobs:
+  should-run:
+    name: Should run
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      should-run: ${{ steps.action.outputs.should-run }}
+    steps:
+      - id: action
+        uses: techneg-it/should-workflow-run@eff19348eb884f57e05bc6f05ae48ece3af14714 # v1.0.1
+  pre-commit:
+    name: Run `pre-commit`
+    needs: should-run
+    if: fromJSON(needs.should-run.outputs.should-run)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
+        with:
+          python-version: 3.14.3
+      - uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd # v3.0.1
+  test:
+    name: Run approval tests
+    needs: should-run
+    if: fromJSON(needs.should-run.outputs.should-run)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      # renovate: datasource=pypi depName=copier
+      COPIER_VERSION: 9.10.2
+      # renovate: datasource=pypi depName=texttest
+      TEXTTEST_VERSION: 4.4.4
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          fetch-depth: 0      # `copier` prefers full-history clones
+          submodules: true
+      - uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Debug on runner (When re-run with "Enable debug logging" checked)
+        if: runner.debug
+        uses: mxschmitt/action-tmate@7b6a61a73bbb9793cb80ad69b8dd8ac19261834c # v3.22
+        with:
+          detached: true
+      - name: Install test dependencies
+        run: |
+          pipx install --python $(which python) copier==$COPIER_VERSION
+          pipx install --python $(which python) texttest==$TEXTTEST_VERSION
+      - name: Run `texttest`
+        run: texttest -b
+  results:
+    name: Collect results
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      checks: read
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: poseidon/wait-for-status-checks@899c768d191b56eef585c18f8558da19e1f3e707 # v0.6.0
+        with:
+          ignore: Collect results
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: codfish/semantic-release-action@22ce451ffd02a9ee2c4bfd126d028e4bd655770e # v4.0.0
+        with:
+          plugins: |
+            [ "@semantic-release/commit-analyzer",
+              "@semantic-release/release-notes-generator",
+              "@semantic-release/github"
+            ]
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
