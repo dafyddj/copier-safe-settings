@@ -2,7 +2,5 @@ The following new files/directories were created:
 <Test Directory>
 ----.copier-answers.safe-settings.yml
 ----.github
---------renovate.json5
---------settings.yml
 --------workflows
 ------------safe-settings.yml
