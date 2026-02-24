@@ -41,7 +41,7 @@ jobs:
       # renovate: datasource=pypi depName=copier
       COPIER_VERSION: 9.10.2
       # renovate: datasource=pypi depName=texttest
-      TEXTTEST_VERSION: 4.4.4
+      TEXTTEST_VERSION: 4.4.6
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
