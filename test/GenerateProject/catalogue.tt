@@ -3,4 +3,4 @@ The following new files/directories were created:
 ----.copier-answers.safe-settings.yml
 ----.github
 --------workflows
-------------safe-settings.yml
+------------libsafe-settings.yml
