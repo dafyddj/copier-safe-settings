@@ -5,9 +5,6 @@ on:
       admin-repo:
         type: string
         default: .github
-      app-id:
-        required: true
-        type: string
       config-path:
         type: string
         default: safe-settings
@@ -20,9 +17,6 @@ on:
       skip-dry-run-errors:
         type: boolean
         default: true
-    secrets:
-      private-key:
-        required: true
 
 permissions: {}
 
@@ -63,10 +57,10 @@ jobs:
           npm run full-sync
         working-directory: ${{ env.SAFE_SETTINGS_CODE_DIR }}
         env:
-          APP_ID: ${{ inputs.app-id }}
+          APP_ID: ${{ vars.SAFE_SETTINGS_APP_ID }}
           ADMIN_REPO: ${{ inputs.admin-repo }}
           CONFIG_PATH: ${{ inputs.config-path }}
           DEPLOYMENT_CONFIG_FILE: ${{ github.workspace }}/${{ inputs.config-path }}/${{ inputs.deployment-config-file }}
           FULL_SYNC_NOP: ${{ inputs.dry-run }}
           LOG_LEVEL: ${{ vars.SAFE_SETTINGS_LOG_LEVEL || 'debug' }}
-          PRIVATE_KEY: ${{ secrets.private-key }}
+          PRIVATE_KEY: ${{ secrets.SAFE_SETTINGS_PRIVATE_KEY }}
